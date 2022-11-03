@@ -1,0 +1,63 @@
+﻿@page "/profile"
+
+@using MauiAppNews.Data
+@using System.Diagnostics
+@inject ProfileService profileService
+@inject IJSRuntime JS
+
+<h1>Profile</h1>
+
+<form>
+    <div class="form-group" style="margin-bottom: 10px">
+        <label>Server</label>
+        <input type="text" class="form-control" placeholder="Server">
+    </div>
+    <div class="form-group" style="margin-bottom: 10px">
+        <label>Select profile</label>
+        <select class="form-control" value="@Mail" placeholder="Loading profiles...">
+            @foreach (var profile in profiles)
+            {
+                <option value=@profile.Mail>@profile.Mail</option>
+            }
+        </select>
+    </div>
+    <div class="form-group" style="margin-bottom: 10px">
+        <label>Password</label>
+        <input type="password" class="form-control" @bind="Pass" placeholder="Password">
+    </div>
+    <button type="submit" class="btn btn-primary">Login</button>
+
+    <NavLink class="nav-link" style="margin-top: 15px" href="addprofile"@onsubmit="(() => Alert())">Create an account</NavLink>
+</form>
+
+@code {
+
+    private List<Data.Profile> profiles = new List<Data.Profile>();
+    public string Mail { get; set; } = string.Empty;
+    public string Pass { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync() // TO DO FETCH AND UPDATE
+    {
+        profiles = await profileService.GetProfilesAsync();
+
+    }
+
+    private async Task Alert()
+    {
+        Data.Profile selectedProfile = profiles.Single(p => p.Mail == Mail);
+
+        Debug.WriteLine("logged in");
+
+        if (selectedProfile.Pass == Pass) 
+        {
+            Debug.WriteLine("logged in");
+            await JS.InvokeAsync<string>("prompt", "Logged in");
+        }
+        else
+        {
+            Debug.WriteLine("not in");
+            await JS.InvokeAsync<string>("prompt", "Incorrect password");
+        }
+
+    }
+}

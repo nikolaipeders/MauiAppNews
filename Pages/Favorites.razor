@@ -1,0 +1,69 @@
+﻿@page "/favorites"
+
+@using MauiAppNews.Data
+@inject FavoriteService favoriteService
+
+<h1>Favorites</h1>
+
+@if (favorites == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div style="width: 80vw;">
+        <input type="text" class="form-control" placeholder="Search for favorite" @bind="SearchCritiria" @bind:event="oninput" @onkeyup="@FilterFavorites" />
+
+        <small class="form-text text-muted" style="margin: 5px">
+            Results : @SearchResults
+        </small>
+
+        <ul class="list-group">
+            @foreach (var favorite in filteredFavorites)
+            {
+                <li class="list-group-item">
+                    <button class="btn btn-danger btn-sm" @onclick="(() => RemoveFavorite(favorite.ID))"> Remove </button>
+                    @favorite.Header
+                </li>
+            }
+        </ul>
+    </div>
+}
+
+@code {
+
+    private List<Favorite> favorites = new List<Favorite>();
+    private List<Favorite> filteredFavorites = new List<Favorite>();
+    public string SearchCritiria { get; set; } = string.Empty;
+    public int SearchResults { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        favorites = await favoriteService.GetFavoritesAsync();
+        filteredFavorites = favorites;
+        SearchResults = favorites.Count;
+    }
+
+    private void FilterFavorites()
+    {
+        filteredFavorites = favorites.Where(x => x.Header.Contains(SearchCritiria)).ToList();
+        SearchResults = filteredFavorites.Count;
+    }
+
+    async Task RemoveFavorite(int ID)
+    {
+        try
+        {
+            Favorite foundFavorite = new Favorite();
+            foundFavorite.ID = ID;
+
+            filteredFavorites = filteredFavorites.Where(x => x.ID != ID).ToList();
+            SearchResults = filteredFavorites.Count;
+
+            await favoriteService.DeleteFavoriteAsync(foundFavorite);
+        }
+        catch (Exception)
+        {
+        }
+    }
+}

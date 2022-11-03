@@ -1,0 +1,72 @@
+﻿@page "/"
+
+@using MauiAppNews.Data
+@using System.Diagnostics
+@inject ArticleService articleService
+@inject FavoriteService favoriteService
+
+<h1>Feed</h1>
+
+<p class="lead">Newest articles based on your interests</p>
+
+@if (filteredArticles.Count < 1)
+{
+    <div>
+        <div class="spinner-border" style="margin: 10px" role="status">
+            <span class="sr-only"></span>
+        </div>
+        <p><em>Loading...</em></p>
+    </div>
+}
+else
+{
+    <div style="width: 80vw;">
+        <input type="text" class="form-control" placeholder="Search for article" @bind="SearchCritiria" @bind:event="oninput" @onkeyup="@FilterArticles" />
+
+        <small class="form-text text-muted" style="margin: 5px">
+            Results : @SearchResults
+        </small>
+
+        <nav class="nav" style="height: 75vh; overflow:hidden; overflow-y:scroll">
+            <ul class="list-group">
+                @foreach (var article in filteredArticles)
+                {
+                    <li class="card" style="margin-right: 5px; margin-bottom: 10px">
+                        <div style="margin: 5px">
+                        @*<button class="btn btn-primary btn-sm" @onclick="(() => SaveFavorite(group.Title))"> Add </button> @*DO SOME BINDING HERE*@
+                        <h6 class="card-subtitle mb-2 text-muted"> Article @article.Header from @article.Group</h6>
+                        @article.Body
+                        </div>
+                    </li>
+                }
+            </ul>
+        </nav>
+    </div>
+}
+
+@code {
+
+    private List<Article> articles = new List<Article>();
+    private List<Article> filteredArticles = new List<Article>();
+    private List<Favorite> favorites = new List<Favorite>();
+    public string SearchCritiria { get; set; } = string.Empty;
+    public int SearchResults { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        favorites = await Task.Run(() => favoriteService.GetFavoritesAsync());
+
+        articles = await Task.Run(() => articleService.GetArticlesAsync(favorites));
+
+        Random rand = new Random();
+        filteredArticles = articles.OrderBy(_ => rand.Next()).ToList();
+        SearchResults = articles.Count;
+    }
+
+    private void FilterArticles()
+    {
+        filteredArticles = articles.Where(x => x.Body.Contains(SearchCritiria)).ToList();
+        SearchResults = filteredArticles.Count;
+    }
+}
+

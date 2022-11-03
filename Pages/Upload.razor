@@ -1,0 +1,82 @@
+﻿@page "/upload"
+
+@using MauiAppNews.Data
+@inject GroupService groupService
+@inject UploadService uploadService
+
+<h1>Upload article</h1>
+
+<form>
+    <div class="form-group" style="margin-bottom: 10px">
+        <label>Header</label>
+        <input type="text" class="form-control" @bind="Header" @bind:event="oninput" placeholder="Header">
+    </div>
+    <div class="form-group" style="margin-bottom: 10px">
+        <label>Search Categories</label>
+        <input type="text" class="form-control" placeholder="Category" @bind="SearchCritiria" @bind:event="oninput" @onkeyup="@FilterGroups"/>
+    </div>
+    <div class="form-group" style="margin-bottom: 10px">
+        <label>Select category</label>
+        <select class="form-control" @bind="Group" placeholder="Loading categories...">
+            @foreach (var group in filteredGroups)
+            {
+                <option value=@group.Title>@group.Title</option>
+            }
+        </select>
+    </div>
+    <div class="form-group" style="margin-bottom: 10px">
+        <label>Article body</label>
+        <textarea class="form-control" rows="10" @bind="Body" @bind:event="oninput"></textarea>
+    </div>
+    <div class="form-group" style="margin-bottom: 10px">
+        <label>Author</label>
+        <input type="text" class="form-control" @bind="Author" @bind:event="oninput" placeholder="Author">
+    </div>
+    <button type="submit" class="btn btn-primary mb-2" @onclick="(() => PostArticle())">Post article</button>
+    <div style="margin-bottom: 10px">
+        <label>@ResponseCode</label>
+    </div>
+</form>
+
+@code {
+
+    private List<Group> groups = new List<Group>();
+    private List<Group> filteredGroups = new List<Group>();
+    public string SearchCritiria { get; set; } = string.Empty;
+    public string Author { get; set; } = string.Empty;
+    public string Header { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+    public string Group { get; set; } = string.Empty;
+    public string ResponseCode { get; set; } = string.Empty;
+    public int SearchResults { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        groups = await Task.Run(() => groupService.GetGroupsAsync());
+
+    }
+
+    private void FilterGroups()
+    {
+        if (SearchCritiria.Length > 0) 
+        {
+            filteredGroups = groups.Where(x => x.Title.Contains(SearchCritiria)).ToList();
+        }
+        else 
+        {
+            filteredGroups.Clear();
+        }
+        SearchResults = filteredGroups.Count;
+    }
+
+    private void PostArticle() /*FIX: This updates the site*/
+    {
+        try
+        {
+            ResponseCode = uploadService.UploadArticle(Header, Body, Group, Author);
+        }
+        catch (Exception)
+        {
+        }
+    }
+}

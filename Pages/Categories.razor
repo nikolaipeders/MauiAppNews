@@ -1,0 +1,74 @@
+﻿@page "/categories"
+
+@using MauiAppNews.Data
+@inject GroupService groupService
+@inject FavoriteService favoriteService
+
+<h1>Categories</h1>
+
+<p class="lead">Select a subject to add to your favorites</p>
+
+@if (filteredGroups.Count < 1)
+{
+    <div>
+        <div class="spinner-border" style="margin: 10px" role="status">
+            <span class="sr-only"></span>
+        </div>
+        <p><em>Loading...</em></p>
+    </div>
+}
+else
+{
+    <div style="width: 80vw;">
+        <input type="text" class="form-control" placeholder="Search for category" @bind="SearchCritiria" @bind:event="oninput" @onkeyup="@FilterGroups" />
+
+        <small class="form-text text-muted" style="margin: 5px">
+            Results : @SearchResults
+        </small>
+        <nav class="nav" style="height: 75vh; overflow:hidden; overflow-y:scroll;">
+            <ul class="list-group">
+                @foreach (var group in filteredGroups)
+                {
+                    <li class="list-group-item">
+                        <button class="btn btn-primary btn-sm" @onclick="(() => SaveFavorite(group.Title))"> Add </button> @*DO SOME BINDING HERE*@
+                        @group.Title
+                    </li>
+                }
+            </ul>
+        </nav>
+    </div>
+}
+
+@code {
+
+    private List<Group> groups = new List<Group>();
+    private List<Group> filteredGroups = new List<Group>();
+    public string SearchCritiria { get; set; } = string.Empty;
+    public int SearchResults { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {   
+        groups = await Task.Run(() => groupService.GetGroupsAsync());       
+        filteredGroups = groups;
+        SearchResults = groups.Count;
+    }
+
+    private void FilterGroups()
+    {
+        filteredGroups = groups.Where(x => x.Title.Contains(SearchCritiria)).ToList();
+        SearchResults = filteredGroups.Count;
+    }
+
+    async Task SaveFavorite(string title)
+    {
+        try
+        {
+            Favorite newFav = new Favorite();
+            newFav.Header = title;
+            await favoriteService.CreateFavoriteAsync(newFav);
+        }
+        catch (Exception)
+        {
+        }
+    }
+}

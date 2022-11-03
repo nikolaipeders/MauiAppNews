@@ -1,0 +1,78 @@
+﻿@page "/browse"
+
+@using MauiAppNews.Data
+@inject GroupService groupService
+@inject ArticleService articleService
+
+<h1>Browse all articles</h1>
+
+<form>
+    <div class="form-group" style="margin-bottom: 10px">
+        <label>Search categories</label>
+        <input type="text" class="form-control" placeholder="Category" @bind="SearchCritiria" @bind:event="oninput" @onkeyup="@FilterGroups"/>
+    </div>
+    <div class="form-group" style="margin-bottom: 10px">
+        <label>Select category</label>
+        <select class="form-control" value="@Group" @onchange="@FetchHeaders" placeholder="Loading categories...">
+            @foreach (var group in filteredGroups)
+            {
+                <option value=@group.Title>@group.Title</option>
+            }
+        </select>
+    </div>
+    <div class="form-group" style="margin-bottom: 10px">
+        <label>Select article</label>
+        <select class="form-control" value="@Header" @onchange="@FetchBody" placeholder="No category selected...">
+            @foreach (var header in headers)
+            {
+                <option value=@header>@header</option>
+            }
+        </select>
+    </div>
+    <div class="form-group" style="margin-bottom: 10px">
+        <label>Article body</label>
+        <textarea class="form-control" rows="15" @bind="Body" @bind:event="oninput"></textarea>
+    </div>
+</form>
+
+@code {
+
+    private List<Group> groups = new List<Group>();
+    private List<Group> filteredGroups = new List<Group>();
+    private List<string> headers = new List<string>();
+    public string SearchCritiria { get; set; } = string.Empty;
+    public string Header { get; set; } = string.Empty;
+    public string Body { get; set; } = string.Empty;
+    public string Group { get; set; } = string.Empty;
+    public int SearchResults { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        groups = await Task.Run(() => groupService.GetGroupsAsync());
+    }
+
+    private void FilterGroups()
+    {
+        if (SearchCritiria.Length > 0) 
+        {
+            filteredGroups = groups.Where(x => x.Title.Contains(SearchCritiria)).ToList();
+        }
+        else 
+        {
+            filteredGroups.Clear();
+        }
+        SearchResults = filteredGroups.Count;
+    }
+    private void FetchHeaders(ChangeEventArgs args)
+    {
+        Group = args.Value.ToString();
+        //await headers = Task.Run(() => articleService.GetHeaders(Group));
+        headers = articleService.GetHeaders(Group);
+    }
+
+    private void FetchBody(ChangeEventArgs args)
+    {
+        Header = args.Value.ToString();
+        Body = articleService.GetBody(Header, Group);
+    }
+}
